@@ -33,6 +33,8 @@ func main() {
 		&authModel.PasswordResetToken{},
 		&authModel.RefreshToken{},
 		&planModel.Plan{},
+		&planModel.PlanWidget{},
+		&planModel.PlanVersion{},
 	); err != nil {
 		panic(err)
 	}
