@@ -9,6 +9,11 @@ import (
 	authModel "teacher-os-api/internal/modules/auth/model"
 	authRepository "teacher-os-api/internal/modules/auth/repository"
 	authService "teacher-os-api/internal/modules/auth/service"
+	planHandler "teacher-os-api/internal/modules/plans/handler"
+	planModel "teacher-os-api/internal/modules/plans/model"
+	planRepository "teacher-os-api/internal/modules/plans/repository"
+	planService "teacher-os-api/internal/modules/plans/service"
+	"teacher-os-api/internal/shared/httpx"
 	"time"
 
 	"github.com/gin-contrib/cors"
@@ -27,6 +32,7 @@ func main() {
 		&authModel.EmailVerificationToken{},
 		&authModel.PasswordResetToken{},
 		&authModel.RefreshToken{},
+		&planModel.Plan{},
 	); err != nil {
 		panic(err)
 	}
@@ -43,32 +49,29 @@ func main() {
 		MaxAge:           12 * time.Hour,
 	}))
 
-	authRepo := authRepository.NewAuthRepository(db)
-	authSvc := authService.NewAuthService(authRepo, cfg.JWTSecret)
-	authH := authHandler.NewAuthHandler(authSvc)
-	authMW := authMiddleware.NewJWTMiddleware(authSvc)
-
 	r.GET("/health", func(c *gin.Context) {
 		sqlDB, err := db.DB()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "db error",
-			})
+			httpx.Error(c, http.StatusInternalServerError, "DB_ERROR", "db error")
 			return
 		}
 
 		if err := sqlDB.Ping(); err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"message": "db unreachable",
-			})
+			httpx.Error(c, http.StatusInternalServerError, "DB_UNREACHABLE", "db unreachable")
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
+		httpx.Success(c, http.StatusOK, gin.H{
 			"message": "ok",
 			"service": "teacher-os-api",
 		})
 	})
+
+	// auth
+	authRepo := authRepository.NewAuthRepository(db)
+	authSvc := authService.NewAuthService(authRepo, cfg.JWTSecret)
+	authH := authHandler.NewAuthHandler(authSvc)
+	authMW := authMiddleware.NewJWTMiddleware(authSvc)
 
 	auth := r.Group("/auth")
 	{
@@ -85,6 +88,17 @@ func main() {
 		auth.POST("/resetPassword", authH.ResetPassword)
 
 		auth.POST("/refresh", authH.Refresh)
+	}
+
+	// plans
+	planRepo := planRepository.NewPlanRepository(db)
+	planSvc := planService.NewPlanService(planRepo)
+	planH := planHandler.NewPlanHandler(planSvc)
+
+	plans := r.Group("/plans", authMW.RequireAuth())
+	{
+		plans.GET("", planH.ListPlans)
+		plans.POST("", planH.CreatePlan)
 	}
 
 	if err := r.Run(":" + cfg.Port); err != nil {
