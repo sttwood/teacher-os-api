@@ -9,6 +9,8 @@ import (
 	authModel "teacher-os-api/internal/modules/auth/model"
 	authRepository "teacher-os-api/internal/modules/auth/repository"
 	authService "teacher-os-api/internal/modules/auth/service"
+	exportHandler "teacher-os-api/internal/modules/export/handler"
+	exportService "teacher-os-api/internal/modules/export/service"
 	planHandler "teacher-os-api/internal/modules/plans/handler"
 	planWidgetHandler "teacher-os-api/internal/modules/plans/handler"
 	planModel "teacher-os-api/internal/modules/plans/model"
@@ -101,12 +103,18 @@ func main() {
 	planWidgetSvc := planWidgetService.NewPlanWidgetService(planRepo)
 	planWidgetH := planWidgetHandler.NewPlanWidgetHandler(planWidgetSvc)
 
+	exportSvc := exportService.NewExportService(planRepo)
+	exportH := exportHandler.NewExportHandler(exportSvc)
+
 	plans := r.Group("/plans", authMW.RequireAuth())
 	{
 		plans.GET("", planH.ListPlans)
 		plans.POST("", planH.CreatePlan)
 		plans.GET("/:id/widgets", planWidgetH.GetWidgets)
 		plans.PUT("/:id/widgets", planWidgetH.SaveWidgets)
+
+		plans.GET("/:id/export/preview", exportH.PreviewLessonPlan)
+		plans.GET("/:id/export/docx", exportH.ExportLessonPlanDOCX)
 	}
 
 	if err := r.Run(":" + cfg.Port); err != nil {
