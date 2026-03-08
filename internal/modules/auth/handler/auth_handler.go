@@ -7,6 +7,7 @@ import (
 	authMiddleware "teacher-os-api/internal/modules/auth/middleware"
 	"teacher-os-api/internal/modules/auth/service"
 	"teacher-os-api/internal/shared/errs"
+	"teacher-os-api/internal/shared/httpx"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,7 +38,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, result)
+	httpx.Success(c, http.StatusCreated, result)
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
@@ -58,7 +59,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
@@ -79,7 +80,7 @@ func (h *AuthHandler) Logout(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) Me(c *gin.Context) {
@@ -95,9 +96,13 @@ func (h *AuthHandler) Me(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, dto.MeResponse{
-		User: *user,
-	})
+	httpx.Success(
+		c,
+		http.StatusOK,
+		dto.MeResponse{
+			User: *user,
+		},
+	)
 }
 
 func (h *AuthHandler) ResendVerifyEmail(c *gin.Context) {
@@ -118,7 +123,7 @@ func (h *AuthHandler) ResendVerifyEmail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) ConfirmVerifyEmail(c *gin.Context) {
@@ -139,7 +144,7 @@ func (h *AuthHandler) ConfirmVerifyEmail(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
@@ -160,7 +165,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
@@ -181,7 +186,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
 
 func (h *AuthHandler) Refresh(c *gin.Context) {
@@ -202,5 +207,5 @@ func (h *AuthHandler) Refresh(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	httpx.Success(c, http.StatusOK, result)
 }
