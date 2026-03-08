@@ -12,11 +12,13 @@ import (
 	exportHandler "teacher-os-api/internal/modules/export/handler"
 	exportService "teacher-os-api/internal/modules/export/service"
 	planHandler "teacher-os-api/internal/modules/plans/handler"
-	planWidgetHandler "teacher-os-api/internal/modules/plans/handler"
 	planModel "teacher-os-api/internal/modules/plans/model"
 	planRepository "teacher-os-api/internal/modules/plans/repository"
 	planService "teacher-os-api/internal/modules/plans/service"
-	planWidgetService "teacher-os-api/internal/modules/plans/service"
+	subjectHandler "teacher-os-api/internal/modules/subjects/handler"
+	subjectModel "teacher-os-api/internal/modules/subjects/model"
+	subjectRepository "teacher-os-api/internal/modules/subjects/repository"
+	subjectService "teacher-os-api/internal/modules/subjects/service"
 	"teacher-os-api/internal/shared/httpx"
 	"time"
 
@@ -36,6 +38,8 @@ func main() {
 		&authModel.EmailVerificationToken{},
 		&authModel.PasswordResetToken{},
 		&authModel.RefreshToken{},
+		&subjectModel.Subject{},
+		&subjectModel.LearningUnit{},
 		&planModel.Plan{},
 		&planModel.PlanWidget{},
 		&planModel.PlanVersion{},
@@ -73,11 +77,26 @@ func main() {
 		})
 	})
 
-	// auth
 	authRepo := authRepository.NewAuthRepository(db)
 	authSvc := authService.NewAuthService(authRepo, cfg.JWTSecret)
 	authH := authHandler.NewAuthHandler(authSvc)
 	authMW := authMiddleware.NewJWTMiddleware(authSvc)
+
+	subjectRepo := subjectRepository.NewSubjectRepository(db)
+	subjectSvc := subjectService.NewSubjectService(subjectRepo)
+	subjectH := subjectHandler.NewSubjectHandler(subjectSvc)
+
+	learningUnitSvc := subjectService.NewLearningUnitService(subjectRepo)
+	learningUnitH := subjectHandler.NewLearningUnitHandler(learningUnitSvc)
+
+	planRepo := planRepository.NewPlanRepository(db)
+	planSvc := planService.NewPlanService(planRepo, subjectRepo)
+	planH := planHandler.NewPlanHandler(planSvc)
+	planWidgetSvc := planService.NewPlanWidgetService(planRepo)
+	planWidgetH := planHandler.NewPlanWidgetHandler(planWidgetSvc)
+
+	exportSvc := exportService.NewExportService(planRepo)
+	exportH := exportHandler.NewExportHandler(exportSvc)
 
 	auth := r.Group("/auth")
 	{
@@ -96,16 +115,6 @@ func main() {
 		auth.POST("/refresh", authH.Refresh)
 	}
 
-	// plans
-	planRepo := planRepository.NewPlanRepository(db)
-	planSvc := planService.NewPlanService(planRepo)
-	planH := planHandler.NewPlanHandler(planSvc)
-	planWidgetSvc := planWidgetService.NewPlanWidgetService(planRepo)
-	planWidgetH := planWidgetHandler.NewPlanWidgetHandler(planWidgetSvc)
-
-	exportSvc := exportService.NewExportService(planRepo)
-	exportH := exportHandler.NewExportHandler(exportSvc)
-
 	plans := r.Group("/plans", authMW.RequireAuth())
 	{
 		plans.GET("", planH.ListPlans)
@@ -115,6 +124,15 @@ func main() {
 
 		plans.GET("/:id/export/preview", exportH.PreviewLessonPlan)
 		plans.GET("/:id/export/docx", exportH.ExportLessonPlanDOCX)
+	}
+
+	subjects := r.Group("/subjects", authMW.RequireAuth())
+	{
+		subjects.GET("", subjectH.ListSubjects)
+		subjects.POST("", subjectH.CreateSubject)
+
+		subjects.GET("/:id/units", learningUnitH.ListLearningUnits)
+		subjects.POST("/:id/units", learningUnitH.CreateLearningUnit)
 	}
 
 	if err := r.Run(":" + cfg.Port); err != nil {

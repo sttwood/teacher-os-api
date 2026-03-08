@@ -1,6 +1,12 @@
 package dto
 
 type CreatePlanRequest struct {
+	SubjectID      string `json:"subjectId" binding:"required"`
+	LearningUnitID string `json:"learningUnitId" binding:"required"`
+	LessonNo       int    `json:"lessonNo"`
+	LessonTitle    string `json:"lessonTitle" binding:"required,min=1"`
+	LessonHours    int    `json:"lessonHours"`
+
 	Title        string `json:"title" binding:"required,min=1"`
 	SubjectGroup string `json:"subjectGroup"`
 	GradeLevel   string `json:"gradeLevel"`
@@ -11,8 +17,14 @@ type CreatePlanRequest struct {
 }
 
 type PlanResponse struct {
-	ID           string `json:"id"`
-	OwnerID      string `json:"ownerId"`
+	ID             string `json:"id"`
+	OwnerID        string `json:"ownerId"`
+	SubjectID      string `json:"subjectId,omitempty"`
+	LearningUnitID string `json:"learningUnitId,omitempty"`
+	LessonNo       int    `json:"lessonNo"`
+	LessonTitle    string `json:"lessonTitle"`
+	LessonHours    int    `json:"lessonHours"`
+
 	Title        string `json:"title"`
 	SubjectGroup string `json:"subjectGroup"`
 	GradeLevel   string `json:"gradeLevel"`

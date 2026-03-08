@@ -1,6 +1,7 @@
 package service
 
 import (
+	"errors"
 	"strings"
 	"time"
 
@@ -8,17 +9,26 @@ import (
 	planDto "teacher-os-api/internal/modules/plans/dto"
 	planModel "teacher-os-api/internal/modules/plans/model"
 	planRepository "teacher-os-api/internal/modules/plans/repository"
+	subjectRepository "teacher-os-api/internal/modules/subjects/repository"
 	"teacher-os-api/internal/shared/errs"
 
 	"github.com/google/uuid"
+	"gorm.io/gorm"
 )
 
 type PlanService struct {
-	repo *planRepository.PlanRepository
+	repo        *planRepository.PlanRepository
+	subjectRepo *subjectRepository.SubjectRepository
 }
 
-func NewPlanService(repo *planRepository.PlanRepository) *PlanService {
-	return &PlanService{repo: repo}
+func NewPlanService(
+	repo *planRepository.PlanRepository,
+	subjectRepo *subjectRepository.SubjectRepository,
+) *PlanService {
+	return &PlanService{
+		repo:        repo,
+		subjectRepo: subjectRepo,
+	}
 }
 
 func (s *PlanService) CreatePlan(
@@ -30,16 +40,48 @@ func (s *PlanService) CreatePlan(
 		return nil, errs.Internal(err)
 	}
 
+	subjectID, err := uuid.Parse(input.SubjectID)
+	if err != nil {
+		return nil, errs.New("SUBJECT_INVALID_ID", "invalid subject id", 400)
+	}
+
+	learningUnitID, err := uuid.Parse(input.LearningUnitID)
+	if err != nil {
+		return nil, errs.New("LEARNING_UNIT_INVALID_ID", "invalid learning unit id", 400)
+	}
+
+	subject, err := s.subjectRepo.FindSubjectByIDAndOwner(subjectID, ownerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.New("SUBJECT_NOT_FOUND", "subject not found", 404)
+		}
+		return nil, errs.Internal(err)
+	}
+
+	_, err = s.subjectRepo.FindLearningUnitByIDAndSubjectID(learningUnitID, subjectID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.New("LEARNING_UNIT_NOT_FOUND", "learning unit not found", 404)
+		}
+		return nil, errs.Internal(err)
+	}
+
 	plan := &planModel.Plan{
-		ID:           uuid.New(),
-		OwnerID:      ownerID,
+		ID:             uuid.New(),
+		OwnerID:        ownerID,
+		SubjectID:      &subjectID,
+		LearningUnitID: &learningUnitID,
+		LessonNo:       input.LessonNo,
+		LessonTitle:    strings.TrimSpace(input.LessonTitle),
+		LessonHours:    input.LessonHours,
+
 		Title:        strings.TrimSpace(input.Title),
-		SubjectGroup: strings.TrimSpace(input.SubjectGroup),
-		GradeLevel:   strings.TrimSpace(input.GradeLevel),
-		Semester:     strings.TrimSpace(input.Semester),
-		AcademicYear: strings.TrimSpace(input.AcademicYear),
-		SchoolName:   strings.TrimSpace(input.SchoolName),
-		TeacherName:  strings.TrimSpace(input.TeacherName),
+		SubjectGroup: subject.SubjectGroup,
+		GradeLevel:   subject.GradeLevel,
+		Semester:     subject.Semester,
+		AcademicYear: subject.AcademicYear,
+		SchoolName:   subject.SchoolName,
+		TeacherName:  subject.TeacherName,
 		Status:       planModel.PlanStatusDraft,
 	}
 
@@ -83,9 +125,25 @@ func (s *PlanService) ListPlans(
 }
 
 func mapPlanToResponse(plan planModel.Plan) planDto.PlanResponse {
+	subjectID := ""
+	if plan.SubjectID != nil {
+		subjectID = plan.SubjectID.String()
+	}
+
+	learningUnitID := ""
+	if plan.LearningUnitID != nil {
+		learningUnitID = plan.LearningUnitID.String()
+	}
+
 	return planDto.PlanResponse{
-		ID:           plan.ID.String(),
-		OwnerID:      plan.OwnerID.String(),
+		ID:             plan.ID.String(),
+		OwnerID:        plan.OwnerID.String(),
+		SubjectID:      subjectID,
+		LearningUnitID: learningUnitID,
+		LessonNo:       plan.LessonNo,
+		LessonTitle:    plan.LessonTitle,
+		LessonHours:    plan.LessonHours,
+
 		Title:        plan.Title,
 		SubjectGroup: plan.SubjectGroup,
 		GradeLevel:   plan.GradeLevel,
