@@ -10,9 +10,11 @@ import (
 	authRepository "teacher-os-api/internal/modules/auth/repository"
 	authService "teacher-os-api/internal/modules/auth/service"
 	planHandler "teacher-os-api/internal/modules/plans/handler"
+	planWidgetHandler "teacher-os-api/internal/modules/plans/handler"
 	planModel "teacher-os-api/internal/modules/plans/model"
 	planRepository "teacher-os-api/internal/modules/plans/repository"
 	planService "teacher-os-api/internal/modules/plans/service"
+	planWidgetService "teacher-os-api/internal/modules/plans/service"
 	"teacher-os-api/internal/shared/httpx"
 	"time"
 
@@ -96,11 +98,15 @@ func main() {
 	planRepo := planRepository.NewPlanRepository(db)
 	planSvc := planService.NewPlanService(planRepo)
 	planH := planHandler.NewPlanHandler(planSvc)
+	planWidgetSvc := planWidgetService.NewPlanWidgetService(planRepo)
+	planWidgetH := planWidgetHandler.NewPlanWidgetHandler(planWidgetSvc)
 
 	plans := r.Group("/plans", authMW.RequireAuth())
 	{
 		plans.GET("", planH.ListPlans)
 		plans.POST("", planH.CreatePlan)
+		plans.GET("/:id/widgets", planWidgetH.GetWidgets)
+		plans.PUT("/:id/widgets", planWidgetH.SaveWidgets)
 	}
 
 	if err := r.Run(":" + cfg.Port); err != nil {
