@@ -16,8 +16,14 @@ const (
 )
 
 type Plan struct {
-	ID           uuid.UUID  `gorm:"type:uuid;primaryKey"`
-	OwnerID      uuid.UUID  `gorm:"type:uuid;not null;index"`
+	ID             uuid.UUID  `gorm:"type:uuid;primaryKey"`
+	OwnerID        uuid.UUID  `gorm:"type:uuid;not null;index"`
+	SubjectID      *uuid.UUID `gorm:"type:uuid;index"`
+	LearningUnitID *uuid.UUID `gorm:"type:uuid;index"`
+	LessonNo       int        `gorm:"default:0"`
+	LessonTitle    string     `gorm:"type:varchar(255)"`
+	LessonHours    int        `gorm:"default:0"`
+
 	Title        string     `gorm:"type:varchar(255);not null"`
 	SubjectGroup string     `gorm:"type:varchar(255)"`
 	GradeLevel   string     `gorm:"type:varchar(100)"`
