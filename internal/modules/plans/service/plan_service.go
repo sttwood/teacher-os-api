@@ -124,6 +124,32 @@ func (s *PlanService) ListPlans(
 	return result, meta, nil
 }
 
+func (s *PlanService) GetPlanByID(
+	currentUser *authDto.UserResponse,
+	planID string,
+) (*planDto.PlanResponse, error) {
+	ownerID, err := uuid.Parse(currentUser.ID)
+	if err != nil {
+		return nil, errs.Internal(err)
+	}
+
+	parsedPlanID, err := uuid.Parse(planID)
+	if err != nil {
+		return nil, errs.New("PLAN_INVALID_ID", "invalid plan id", 400)
+	}
+
+	plan, err := s.repo.FindPlanByIDAndOwner(parsedPlanID, ownerID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errs.New("PLAN_NOT_FOUND", "plan not found", 404)
+		}
+		return nil, errs.Internal(err)
+	}
+
+	result := mapPlanToResponse(*plan)
+	return &result, nil
+}
+
 func mapPlanToResponse(plan planModel.Plan) planDto.PlanResponse {
 	subjectID := ""
 	if plan.SubjectID != nil {

@@ -71,6 +71,21 @@ func (h *PlanHandler) ListPlans(c *gin.Context) {
 	httpx.SuccessWithMeta(c, http.StatusOK, items, meta)
 }
 
+func (h *PlanHandler) GetPlanByID(c *gin.Context) {
+	currentUser, ok := h.getCurrentUser(c)
+	if !ok {
+		return
+	}
+
+	result, err := h.service.GetPlanByID(currentUser, c.Param("id"))
+	if err != nil {
+		errs.WriteError(c, err)
+		return
+	}
+
+	httpx.Success(c, http.StatusOK, result)
+}
+
 func (h *PlanHandler) getCurrentUser(c *gin.Context) (*authDto.UserResponse, bool) {
 	currentUser, exists := c.Get(authMiddleware.CurrentUserKey)
 	if !exists {
