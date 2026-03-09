@@ -51,7 +51,9 @@ func (r *PlanRepository) ListPlansByOwner(
 
 func (r *PlanRepository) FindPlanByIDAndOwner(planID uuid.UUID, ownerID uuid.UUID) (*model.Plan, error) {
 	var plan model.Plan
-	err := r.db.Where("id = ? AND owner_id = ?", planID, ownerID).First(&plan).Error
+	err := r.db.
+		Where("id = ? AND owner_id = ?", planID, ownerID).
+		First(&plan).Error
 	if err != nil {
 		return nil, err
 	}

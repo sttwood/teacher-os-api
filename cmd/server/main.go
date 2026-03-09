@@ -119,6 +119,8 @@ func main() {
 	{
 		plans.GET("", planH.ListPlans)
 		plans.POST("", planH.CreatePlan)
+		plans.GET("/:id", planH.GetPlanByID)
+
 		plans.GET("/:id/widgets", planWidgetH.GetWidgets)
 		plans.PUT("/:id/widgets", planWidgetH.SaveWidgets)
 
