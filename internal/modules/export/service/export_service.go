@@ -50,9 +50,25 @@ func (s *ExportService) GetLessonPlanPreview(
 		return nil, errs.Internal(err)
 	}
 
+	subjectID := ""
+	if plan.SubjectID != nil {
+		subjectID = plan.SubjectID.String()
+	}
+
+	learningUnitID := ""
+	if plan.LearningUnitID != nil {
+		learningUnitID = plan.LearningUnitID.String()
+	}
+
 	doc := &exportDto.LessonPlanDocument{
-		PlanID:       plan.ID.String(),
-		Title:        plan.Title,
+		PlanID:         plan.ID.String(),
+		Title:          plan.Title,
+		SubjectID:      subjectID,
+		LearningUnitID: learningUnitID,
+		LessonNo:       plan.LessonNo,
+		LessonTitle:    plan.LessonTitle,
+		LessonHours:    plan.LessonHours,
+
 		SubjectGroup: plan.SubjectGroup,
 		GradeLevel:   plan.GradeLevel,
 		Semester:     plan.Semester,

@@ -1,8 +1,14 @@
 package dto
 
 type LessonPlanDocument struct {
-	PlanID       string `json:"planId"`
-	Title        string `json:"title"`
+	PlanID         string `json:"planId"`
+	Title          string `json:"title"`
+	SubjectID      string `json:"subjectId"`
+	LearningUnitID string `json:"learningUnitId"`
+	LessonNo       int    `json:"lessonNo"`
+	LessonTitle    string `json:"lessonTitle"`
+	LessonHours    int    `json:"lessonHours"`
+
 	SubjectGroup string `json:"subjectGroup"`
 	GradeLevel   string `json:"gradeLevel"`
 	Semester     string `json:"semester"`
